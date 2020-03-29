@@ -50,10 +50,9 @@ app.use(function (err, req, res, next) {
 db.connect();
 
 
-const port = process.env.port || 3000; 
 
-app.listen(port, () => {
-    console.log('dream-team server is online @ port 3000')
+app.listen(process.env.port || 3000, () => {
+    console.log('dream-team server is online')
 });
 
 
