@@ -117,7 +117,7 @@ async function getItemsNearLocation(req, res, next) {
 
         }));
 
-        res.status(200).json({ closeby: foundCloseby });
+       return foundCloseby;
 
     }
     catch (err) {
