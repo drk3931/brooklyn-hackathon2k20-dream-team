@@ -8,13 +8,20 @@ const jwt = require('jsonwebtoken');
 const geolib = require('geolib');
 
 function checkToken(req, res, next) {
-    if (jwt.decode(req.headers.authorization)) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+    let decoded = jwt.decode(req.headers.authorization);
+    if (decoded) {
+        req.user = decoded;
         next();
     }
     else {
         return res.status(401).json({ message: 'invalid token' })
     }
 }
+
 
 
 function loginFunction(req, res, next) {
@@ -24,7 +31,7 @@ function loginFunction(req, res, next) {
         return res.status(200).json({ message: 'already logged in' })
     }
 
-    passport.authenticate('local', function (err, user, info) {
+    passport.authenticate('local', {session:false},function (err, user, info) {
         if (err) { return next(err); }
         if (!user) { return res.status(403).json(info) }
 
@@ -38,14 +45,11 @@ function loginFunction(req, res, next) {
 
 async function userAddItem(req, res, next) {
 
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
+
 
     try {
 
-        let user = await User.findOne({ phone: req.body.phone });
+        let user = await User.findOne({ phone: req.user.phone });
 
         if (!user) {
             throw new Error("User not found")
@@ -69,19 +73,8 @@ async function userAddItem(req, res, next) {
 
 async function getItemsNearLocation(req, res, next) {
 
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
 
     try {
-
-        let lat = req.body.latitude;
-        let long = req.body.longitude;
-
-        if (!lat || !long) {
-            throw new Error("please supply latitude and longitude")
-        }
 
         let users = await User.find({});
         let foundCloseby = [];
@@ -150,6 +143,8 @@ module.exports = {
         userAddItem
     ],
     getItemsNearLocation: [
+        check('longitude').isNumeric(),
+        check('latitude').isNumeric(),
         checkToken,
         getItemsNearLocation
     ]
