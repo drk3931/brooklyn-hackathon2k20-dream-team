@@ -5,7 +5,7 @@ var User = require('../models/User')
 
 var passport = require('passport');
 const jwt = require('jsonwebtoken');
-const geolib = require('geolib');
+const geocoder = require('../GeoCoder');
 
 function checkToken(req, res, next) {
     const errors = validationResult(req);
@@ -45,22 +45,34 @@ function loginFunction(req, res, next) {
 
 async function userAddItem(req, res, next) {
 
+    let address = req.body.address,latitude,longitude;
 
+    if(!address){
+        latitude = req.body.latitude;
+        longitude = req.body.longitude;
+    }else{
+        const res = await geocoder.geocode(address);
+        latitude = res.latitude;
+        longitude = res.longitude;
+    }
 
+    if(!latitude || !longitude){
+        return res.status(400).json({"err":"no location info could be accessed"})
+    }
+
+    
     try {
 
         let user = await User.findOne({ phone: req.user.phone });
 
-        if (!user) {
-            throw new Error("User not found")
-        }
 
-        if (req.body.itemToDonate) {
-            user.itemsToDonate.push(req.body.itemToDonate);
-        }
-        else {
-            throw new Error("Body does not contain itemsToDonate")
-        }
+
+        user.itemsToDonate.push({
+            itemType:itemToDonate.itemType,
+            itemDescription:itemToDonate.itemDescription,
+            latitude: latitude,
+            longitude:longitude
+        });
         user.save();
         return res.status(200).json(user.itemsToDonate);
     }
@@ -143,10 +155,10 @@ module.exports = {
         userAddItem
     ],
     getItemsNearLocation: [
-        check('longitude').isNumeric(),
-        check('latitude').isNumeric(),
         checkToken,
         getItemsNearLocation
     ]
 
 }
+
+
