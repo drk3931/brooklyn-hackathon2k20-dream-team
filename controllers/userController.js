@@ -7,12 +7,11 @@ var passport = require('passport');
 const jwt = require('jsonwebtoken');
 const geolib = require('geolib');
 
-function checkToken(req,res,next)
-{
-    if(jwt.decode(req.headers.authorization)){
+function checkToken(req, res, next) {
+    if (jwt.decode(req.headers.authorization)) {
         next();
     }
-    else{
+    else {
         return res.status(401).json({ message: 'invalid token' })
     }
 }
@@ -21,66 +20,76 @@ function checkToken(req,res,next)
 function loginFunction(req, res, next) {
 
 
-    if(jwt.decode(req.headers.authorization)){
-        return res.status(200).json({ message: 'already logged in' }) 
+    if (jwt.decode(req.headers.authorization)) {
+        return res.status(200).json({ message: 'already logged in' })
     }
-    
+
     passport.authenticate('local', function (err, user, info) {
-      if (err) { return next(err); }
-      if (!user) { return res.status(403).json(info) }
-                            
-      const token = jwt.sign(user.toJSON(), process.env.JWT_SECRET);
-      return res.json({user:user.toJSON(), token});
-  
-  
-    })(req,res,next);
-  
-  }
+        if (err) { return next(err); }
+        if (!user) { return res.status(403).json(info) }
 
-async function userAddItem(req,res,next){
+        const token = jwt.sign(user.toJSON(), process.env.JWT_SECRET);
+        return res.json({ user: user.toJSON(), token });
 
-    try{
 
-        let user = await User.findOne({phone:req.body.phone});
+    })(req, res, next);
 
-        if(!user){
+}
+
+async function userAddItem(req, res, next) {
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+
+        let user = await User.findOne({ phone: req.body.phone });
+
+        if (!user) {
             throw new Error("User not found")
         }
 
-        if(req.body.itemToDonate){
+        if (req.body.itemToDonate) {
             user.itemsToDonate.push(req.body.itemToDonate);
         }
-        else{
+        else {
             throw new Error("Body does not contain itemsToDonate")
         }
         user.save();
         return res.status(200).json(user.itemsToDonate);
     }
-    catch(err){
+    catch (err) {
         return res.status(400).json(err)
     }
-    
+
 }
 
 
-async function getItemsNearLocation(req,res,next){
+async function getItemsNearLocation(req, res, next) {
 
-    try{
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
 
         let lat = req.body.latitude;
         let long = req.body.longitude;
 
-        if(!lat || !long){
+        if (!lat || !long) {
             throw new Error("please supply latitude and longitude")
         }
 
         let users = await User.find({});
         let foundCloseby = [];
-        
-        users.forEach((user=>{
+
+        users.forEach((user => {
 
             user.itemsToDonate.map(
-                (item)=>{
+                (item) => {
                     let itemLat = item.latitude;
                     let itemLon = item.longitude;
 
@@ -89,10 +98,10 @@ async function getItemsNearLocation(req,res,next){
                         { latitude: lat, longitude: long }
                     );
 
-                    const numMiles =  5;
+                    const numMiles = 5;
                     const asMeters = 1609.34 * numMiles;
-                    
-                    if(distanceMeters <= asMeters){
+
+                    if (distanceMeters <= asMeters) {
                         foundCloseby.push(item);
                     }
 
@@ -101,19 +110,21 @@ async function getItemsNearLocation(req,res,next){
 
         }));
 
-        res.status(200).json({closeby:foundCloseby});
+        res.status(200).json({ closeby: foundCloseby });
 
     }
-    catch(err){
+    catch (err) {
         return res.status(400).json(err)
     }
 
-  
-    
+
+
 }
 
 module.exports = {
     createUser: [
+        check('phone').isMobilePhone(),
+        check('password').isLength({ min: 6 }),
         //finally, make user
         function createUser(req, res) {
             const errors = validationResult(req);
@@ -124,9 +135,9 @@ module.exports = {
                 phone: req.body.phone,
                 password: req.body.password
             }).then((res2) => {
-                res.status(200).json({ message:"Successfully Made User" });
+                res.status(200).json({ message: "Successfully Made User" });
             }).catch((err) => {
-                res.status(503).json(err.message);
+                res.status(400).json(err.message);
             })
 
         }
@@ -134,13 +145,13 @@ module.exports = {
     loginUser: [
         loginFunction
     ],
-    userAddItem:[
+    userAddItem: [
         checkToken,
         userAddItem
     ],
-    getItemsNearLocation:[
+    getItemsNearLocation: [
         checkToken,
         getItemsNearLocation
     ]
-  
+
 }
