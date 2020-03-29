@@ -1,4 +1,5 @@
 //written by deepak khemraj github.com/drk3931
+'use strict';
 
 const { check, validationResult } = require('express-validator');
 var User = require('../models/User')
@@ -6,6 +7,7 @@ var User = require('../models/User')
 var passport = require('passport');
 const jwt = require('jsonwebtoken');
 const geocoder = require('../GeoCoder');
+const geolib = require('geolib');
 
 function checkToken(req, res, next) {
     const errors = validationResult(req);
@@ -68,6 +70,11 @@ async function userAddItem(req, res, next) {
         let user = await User.findOne({ phone: req.user.phone });
         let itemToDonate = req.body.itemToDonate;
 
+        if(!user){
+            return res.status(400).json({error:"user not found"})
+
+        }
+
         user.itemsToDonate.push({
             itemType:itemToDonate.itemType,
             itemDescription:itemToDonate.itemDescription,
@@ -87,6 +94,9 @@ async function userAddItem(req, res, next) {
 
 async function getItemsNearLocation(req, res, next) {
 
+    let lat = req.body.latitude;
+    let long = req.body.longitude;
+
 
     try {
 
@@ -94,6 +104,7 @@ async function getItemsNearLocation(req, res, next) {
         let foundCloseby = [];
 
         users.forEach((user => {
+
 
             user.itemsToDonate.map(
                 (item) => {
@@ -117,10 +128,11 @@ async function getItemsNearLocation(req, res, next) {
 
         }));
 
-       return foundCloseby;
+       res.status(200).json({items:foundCloseby});
 
     }
     catch (err) {
+
         return res.status(400).json(err)
     }
 
@@ -157,6 +169,8 @@ module.exports = {
         userAddItem
     ],
     getItemsNearLocation: [
+        check('longitude').isNumeric(),
+        check('latitude').isNumeric(),
         checkToken,
         getItemsNearLocation
     ]
