@@ -29,7 +29,7 @@ function loginFunction(req, res, next) {
         if (!user) { return res.status(403).json(info) }
 
         const token = jwt.sign(user.toJSON(), process.env.JWT_SECRET);
-        return res.json({ user: user.toJSON(), token });
+        return res.json({ userPhone: user.phone, token });
 
 
     })(req, res, next);
@@ -137,7 +137,7 @@ module.exports = {
             }).then((res2) => {
                 res.status(200).json({ message: "Successfully Made User" });
             }).catch((err) => {
-                res.status(400).json(err.message);
+                res.status(400).json({message: "User already exists"});
             })
 
         }
