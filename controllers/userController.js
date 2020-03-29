@@ -45,27 +45,28 @@ function loginFunction(req, res, next) {
 
 async function userAddItem(req, res, next) {
 
-    let address = req.body.address,latitude,longitude;
+    let address = req.body.address;
+    let latitude = undefined;
+    let longitude = undefined;
 
     if(!address){
         latitude = req.body.latitude;
         longitude = req.body.longitude;
     }else{
-        const res = await geocoder.geocode(address);
-        latitude = res.latitude;
-        longitude = res.longitude;
+        let res = await geocoder.geocode(address);
+        latitude = res[0].latitude;
+        longitude = res[0].longitude;
+    
     }
 
     if(!latitude || !longitude){
         return res.status(400).json({"err":"no location info could be accessed"})
     }
 
-    
     try {
 
         let user = await User.findOne({ phone: req.user.phone });
-
-
+        let itemToDonate = req.body.itemToDonate;
 
         user.itemsToDonate.push({
             itemType:itemToDonate.itemType,
@@ -73,7 +74,8 @@ async function userAddItem(req, res, next) {
             latitude: latitude,
             longitude:longitude
         });
-        user.save();
+        await user.save();
+      
         return res.status(200).json(user.itemsToDonate);
     }
     catch (err) {
