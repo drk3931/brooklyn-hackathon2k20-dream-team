@@ -18,16 +18,6 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-
-app.use((req, res, next) => {
-    if (mongoose.connection.readyState != 1) {
-        res.status(500).send('Err. Database is down');
-    }
-    else {
-        next();
-    }
-});
-
 //setup passport strategies
 app.use(passport.initialize());
 
