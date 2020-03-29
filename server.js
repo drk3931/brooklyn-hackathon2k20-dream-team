@@ -26,7 +26,13 @@ require('./auth')
 
 app.use('/api', require('./api'));
 
-//error handling
+
+//404 handling
+app.use(function (req, res, next) {
+    res.status(404).type('txt').send('Not found');
+})
+
+//error handling, NOT CALLED
 app.use(function (err, req, res, next) {
     if (err && process.env.NODE_ENV == 'development') {
 
@@ -38,10 +44,7 @@ app.use(function (err, req, res, next) {
 
 })
 
-//404 handling
-app.use(function (req, res, next) {
-    res.status(404).type('txt').send('Not found');
-})
+
 
 
 db.connect();
