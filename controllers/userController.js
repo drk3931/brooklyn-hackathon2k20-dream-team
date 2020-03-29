@@ -126,8 +126,7 @@ module.exports = {
             }).then((res2) => {
                 res.status(200).json({ message:"Successfully Made User" });
             }).catch((err) => {
-                console.log(err)
-                res.status(503).json(err);
+                res.status(503).json(err.message);
             })
 
         }
