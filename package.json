@@ -4,12 +4,13 @@
   "description": "Brooklyn Hackathon 2k20 - Dream Team",
   "main": "server.js",
   "scripts": {
-    "start": "env NODE_ENV=development nodemon index.js --watch"
+    "start": "env NODE_ENV=development nodemon server.js --watch"
   },
   "author": "Deepak Khemraj drk3931@gmail.com",
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^3.0.7",
+    "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "express-validator": "^6.3.1",
     "jsonwebtoken": "^8.5.1",

@@ -2,10 +2,12 @@
 const express = require('express')
 const db = require('./db')
 const passport = require('passport')
-const mongoose = require('mongoose')
+require('dotenv').config()
+
 
 
 var app = express();
+
 
 app.use((req, res, next) => {
 
@@ -20,6 +22,7 @@ app.use(express.json());
 
 //setup passport strategies
 app.use(passport.initialize());
+require('./auth')
 
 app.use('/api', require('./api'));
 
@@ -41,8 +44,12 @@ app.use(function (req, res, next) {
 })
 
 
+db.connect();
 
-app.listen(3000, () => {
+
+const port = process.env.port || 3000; 
+
+app.listen(port, () => {
     console.log('dream-team server is online @ port 3000')
 });
 
