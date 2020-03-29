@@ -50,7 +50,7 @@ app.use(function (err, req, res, next) {
 db.connect();
 
 
-
+//default heroku port
 app.listen(process.env.port || 3000, () => {
     console.log('dream-team server is online')
 });
