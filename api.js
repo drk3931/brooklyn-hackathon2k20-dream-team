@@ -6,6 +6,8 @@ var router = require('express').Router()
 router.post('/test',testController.testing)
 router.post('/createUser',userController.createUser)
 router.post('/loginUser',userController.loginUser)
+router.post('/userAddItem',userController.userAddItem)
+router.post('/getItemsNearLocation',userController.getItemsNearLocation)
 
 
 module.exports = router;

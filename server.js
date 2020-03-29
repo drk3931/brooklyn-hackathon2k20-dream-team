@@ -1,3 +1,6 @@
+//written by deepak khemraj github.com/drk3931
+
+
 'use strict';
 const express = require('express')
 const db = require('./db')

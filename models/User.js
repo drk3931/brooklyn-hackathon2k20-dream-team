@@ -1,11 +1,15 @@
+//User.js by deepak khemraj github.com/drk3931
+
 var bcrypt = require('bcrypt')
 var mongoose = require('mongoose')
 var env = require('dotenv')
 
 var userSchema = new mongoose.Schema({
 
-    password: { type: String, required: [true,'User password required'] },
+    password: { type: String, minlength:6, required: [true,'User password required'] },
 
+
+    
     phone: {
         type: String,
         validate: {
@@ -16,7 +20,38 @@ var userSchema = new mongoose.Schema({
         },
         required: [true, 'User phone number required'],
         index: { unique: true }
-    }
+    },
+
+    itemsToDonate:[
+        {
+            itemType: {
+                type: String,
+                enum : ['food','clothing','books','other'],
+                default: 'other',
+                required:true
+            },
+            itemDescription: {
+                type: String,
+                required:true
+            },
+            longitude:{
+                type: Number,
+                required:true
+            },
+            latitude:{
+                type: Number,
+                required:true
+            },
+            address:{
+                type: String,
+                required:false
+            },
+
+            
+        }
+    ]
+
+
 
 });
 
