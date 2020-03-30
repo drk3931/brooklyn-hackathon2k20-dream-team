@@ -28,7 +28,7 @@ Note: Requires jwt auth token
 This can take either an address or longitude and latitude coordinates. If an address, it will be convered into long lat and used
 for comparison against zip codes of users in the database 
 
-itemType can be food, clothes, or other
+itemType can be ['food','clothing','books','other']
 
 /api/userAddItem
 
