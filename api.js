@@ -10,5 +10,5 @@ router.post('/loginUser',userController.loginUser)
 router.post('/userAddItem',userController.userAddItem)
 router.post('/getItemsNearLocation',userController.getItemsNearLocation)
 
-//r
+
 module.exports = router;
