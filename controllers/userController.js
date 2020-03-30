@@ -10,10 +10,7 @@ const geocoder = require('../GeoCoder');
 const geolib = require('geolib');
 
 function checkToken(req, res, next) {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
+ 
     let decoded = jwt.decode(req.headers.authorization);
     if (decoded) {
         req.user = decoded;
@@ -37,7 +34,7 @@ function loginFunction(req, res, next) {
         if (err) { return next(err); }
         if (!user) { return res.status(403).json(info) }
 
-        const token = jwt.sign(user.toJSON(), process.env.JWT_SECRET);
+        const token = jwt.sign(user.toJSON(), process.env.JWT_SECRET,{expiresIn: '365d'});
         return res.json({ userPhone: user.phone, token });
 
 
@@ -82,13 +79,44 @@ async function userAddItem(req, res, next) {
             longitude:longitude
         });
         await user.save();
+
+        await getUsersNearCoordinate(1,1);
       
         return res.status(200).json(user.itemsToDonate);
     }
     catch (err) {
+
         return res.status(400).json(err)
     }
 
+}
+
+async function getUsersNearCoordinate(lat,lon){
+
+    let users = await User.find({});
+    
+
+    return users.filter(
+        async u=>{
+            let zip = u.zip;
+
+            let zipCoords = await geocoder.geocode(zip);
+
+            if(zipCoords){
+                
+                console.log(zipCoords);
+                return true;
+
+
+            }
+            else{
+                return false;
+            }
+        }
+    );
+
+
+    
 }
 
 
@@ -142,8 +170,9 @@ async function getItemsNearLocation(req, res, next) {
 
 module.exports = {
     createUser: [
-        check('phone').isMobilePhone(),
-        check('password').isLength({ min: 6 }),
+  //      check('phone').isMobilePhone(),
+ //       check('password').isLength({ min: 6 }),
+ //       check('zip').isPostalCode,
         //finally, make user
         function createUser(req, res) {
             const errors = validationResult(req);
@@ -152,7 +181,8 @@ module.exports = {
             }
             User.create({
                 phone: req.body.phone,
-                password: req.body.password
+                password: req.body.password,
+                zipcode:req.body.zip
             }).then((res2) => {
                 res.status(200).json({ message: "Successfully Made User" });
             }).catch((err) => {
