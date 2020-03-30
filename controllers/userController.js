@@ -114,7 +114,7 @@ async function userAddItem(req, res, next) {
             console.error(err);
           });
 
-        return res.status(200).json(closeByUsers);
+        return res.status(200).json(user.itemsToDonate);
     }
     catch (err) {
         console.log(err)
@@ -156,7 +156,7 @@ async function getUsersNearCoordinate(phone,lat,long){
                 const numMiles = 5;
                 const asMeters = 1609.34 * numMiles;
 
-
+                console.log(distanceMeters)
                 if (distanceMeters <= asMeters) {
                     closeUsers.push(u.phone)
                 }
