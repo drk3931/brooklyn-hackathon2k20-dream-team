@@ -16,7 +16,7 @@ passport.use(new LocalStrategy(
 
             if (err) { return done(err); }
             if (!user) {
-                return done(null, false, { message: 'Incorrect phone.' });
+                return done(null, false, { message: 'Incorrect phone. User does not exist.' });
             }
             try {
                 let isMatch = await user.comparePassword(password);

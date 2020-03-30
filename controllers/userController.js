@@ -1,4 +1,5 @@
 //written by deepak khemraj github.com/drk3931
+'use strict';
 
 const { check, validationResult } = require('express-validator');
 var User = require('../models/User')
@@ -6,6 +7,7 @@ var User = require('../models/User')
 var passport = require('passport');
 const jwt = require('jsonwebtoken');
 const geocoder = require('../GeoCoder');
+const geolib = require('geolib');
 
 // Twilio setup
 const accountSID = process.env.TWILIO_ACCOUNT_SID;
@@ -70,27 +72,33 @@ function loginFunction(req, res, next) {
 
 async function userAddItem(req, res, next) {
 
-    let address = req.body.address,latitude,longitude;
+    let address = req.body.address;
+    let latitude = undefined;
+    let longitude = undefined;
 
     if(!address){
         latitude = req.body.latitude;
         longitude = req.body.longitude;
     }else{
-        const res = await geocoder.geocode(address);
-        latitude = res.latitude;
-        longitude = res.longitude;
+        let res = await geocoder.geocode(address);
+        latitude = res[0].latitude;
+        longitude = res[0].longitude;
+    
     }
 
     if(!latitude || !longitude){
         return res.status(400).json({"err":"no location info could be accessed"})
     }
-
-
+  
     try {
 
         let user = await User.findOne({ phone: req.user.phone });
+        let itemToDonate = req.body.itemToDonate;
 
+        if(!user){
+            return res.status(400).json({error:"user not found"})
 
+        }
 
         user.itemsToDonate.push({
             itemType:itemToDonate.itemType,
@@ -98,7 +106,8 @@ async function userAddItem(req, res, next) {
             latitude: latitude,
             longitude:longitude
         });
-        user.save();
+        await user.save();
+      
         return res.status(200).json(user.itemsToDonate);
     }
     catch (err) {
@@ -110,6 +119,9 @@ async function userAddItem(req, res, next) {
 
 async function getItemsNearLocation(req, res, next) {
 
+    let lat = req.body.latitude;
+    let long = req.body.longitude;
+
 
     try {
 
@@ -117,6 +129,7 @@ async function getItemsNearLocation(req, res, next) {
         let foundCloseby = [];
 
         users.forEach((user => {
+
 
             user.itemsToDonate.map(
                 (item) => {
@@ -140,10 +153,11 @@ async function getItemsNearLocation(req, res, next) {
 
         }));
 
-        res.status(200).json({ closeby: foundCloseby });
+       res.status(200).json({items:foundCloseby});
 
     }
     catch (err) {
+
         return res.status(400).json(err)
     }
 
@@ -180,6 +194,8 @@ module.exports = {
         userAddItem
     ],
     getItemsNearLocation: [
+        check('longitude').isNumeric(),
+        check('latitude').isNumeric(),
         checkToken,
         getItemsNearLocation
     ]
