@@ -38,11 +38,11 @@ function loginFunction(req, res, next) {
         return res.status(200).json({ message: 'already logged in' })
     }
 
-    passport.authenticate('local',function (err, user, info) {
+    passport.authenticate('local', function (err, user, info) {
         if (err) { return next(err); }
         if (!user) { return res.status(403).json(info) }
 
-        const token = jwt.sign(user.toJSON(), "asdiuhasiduhasiduhasuidh",{expiresIn: '365d'});
+        const token = jwt.sign(user.toJSON(), "asdiuhasiduhasiduhasuidh", { expiresIn: '365d' });
         return res.json({ token });
 
 
@@ -54,36 +54,36 @@ function loginFunction(req, res, next) {
 
 async function userAddItem(req, res, next) {
 
-    let address = req.body.address,latitude,longitude;
+    let address = req.body.address, latitude, longitude;
 
 
     let itemToDonate = req.body.itemToDonate;
 
-    if(!address){
+    if (!address) {
         latitude = req.body.latitude;
         longitude = req.body.longitude;
         let components = await geocoder.geocode(`${latitude},${longitude}`);
         components = components[0];
 
-        if(components){
+        if (components) {
             address = `${components.streetNumber} ${components.streetName} , ${components.city} , ${components.zipcode}`;
         }
-        else{
-            return res.status(400).json({"err":"no location info could be accessed"})
+        else {
+            return res.status(400).json({ "err": "no location info could be accessed" })
         }
-    }else{
+    } else {
         let res = await geocoder.geocode(address);
         latitude = res[0].latitude;
         longitude = res[0].longitude;
 
     }
 
-    if(!latitude || !longitude){
-        return res.status(400).json({"err":"no location info could be accessed"})
+    if (!latitude || !longitude) {
+        return res.status(400).json({ "err": "no location info could be accessed" })
     }
 
-    if(!itemToDonate){
-        return res.status(400).json({"err":"itemToDonate is undefined"})
+    if (!itemToDonate) {
+        return res.status(400).json({ "err": "itemToDonate is undefined" })
 
     }
 
@@ -94,48 +94,47 @@ async function userAddItem(req, res, next) {
         let user = await User.findOne({ phone: req.user.phone });
 
 
-        if(!user){
-            return res.status(400).json({error:"user not found"})
+        if (!user) {
+            return res.status(400).json({ error: "user not found" })
 
         }
 
 
         let newItem = {
-            itemType:itemToDonate.itemType,
-            itemDescription:itemToDonate.itemDescription,
+            itemType: itemToDonate.itemType,
+            itemDescription: itemToDonate.itemDescription,
             latitude: latitude,
-            longitude:longitude
+            longitude: longitude
         }
 
 
         user.itemsToDonate.push(newItem);
         await user.save();
 
-        let closeByUsers = await getUsersNearCoordinate(req.user.phone,latitude,longitude);
-        
-        if(closeByUsers.length === 0)
-        {
+        let closeByUsers = await getUsersNearCoordinate(req.user.phone, latitude, longitude);
+
+        if (closeByUsers.length === 0) {
             return res.status(200).json(user.itemsToDonate);
         }
-        
+
         // TODO: Needs to be tested. May fail because closeByUsers is async. If fails, add await to bindings.
         const bindings = closeByUsers.map(number => {
-          return JSON.stringify({ binding_type: 'sms', address: number });
+            return JSON.stringify({ binding_type: 'sms', address: number });
         });
 
-        let bodyString =  `Hey there! There\'s something available for pickup nearby. \n category: ${newItem.itemType} \n description: ${newItem.itemDescription} \n ${address}`;
+        let bodyString = `Hey there! There\'s something available for pickup nearby. \n category: ${newItem.itemType} \n description: ${newItem.itemDescription} \n ${address}`;
 
         service.notifications
-          .create({
-            toBinding: bindings,
-            body:bodyString
-          })
-          .then(notification => {
-            console.log(notification);
-          })
-          .catch(err => {
-            console.error(err);
-          });
+            .create({
+                toBinding: bindings,
+                body: bodyString
+            })
+            .then(notification => {
+                console.log(notification);
+            })
+            .catch(err => {
+                console.error(err);
+            });
 
         return res.status(200).json(user.itemsToDonate);
     }
@@ -146,14 +145,14 @@ async function userAddItem(req, res, next) {
 
 }
 
-async function getUsersNearCoordinate(phone,lat,long){
+async function getUsersNearCoordinate(phone, lat, long) {
 
     let users = await User.find({});
     let closeUsers = [];
 
-    for(let u of users){
+    for (let u of users) {
 
-        if(!(u.phone === phone)){
+        if (!(u.phone === phone)) {
 
             let zip = u.zip;
             let targLat = undefined, targLong = undefined;
@@ -161,9 +160,9 @@ async function getUsersNearCoordinate(phone,lat,long){
 
             let zipCoord = await geocoder.geocode(zip);
 
-            
-            for(let zOuter of zipCoord){
-                if(zOuter.state==="New York"){
+
+            for (let zOuter of zipCoord) {
+                if (zOuter.state === "New York") {
                     targLat = zOuter.latitude;
                     targLong = zOuter.longitude;
                     break;
@@ -172,7 +171,7 @@ async function getUsersNearCoordinate(phone,lat,long){
             }
 
 
-            if(targLat && targLong){
+            if (targLat && targLong) {
 
 
 
@@ -191,8 +190,8 @@ async function getUsersNearCoordinate(phone,lat,long){
                 }
 
             }
-        }else{
-        
+        } else {
+
 
         }
 
@@ -200,7 +199,7 @@ async function getUsersNearCoordinate(phone,lat,long){
 
     return closeUsers;
 
- 
+
 
 }
 
@@ -241,7 +240,7 @@ async function getItemsNearLocation(req, res, next) {
 
         }));
 
-       res.status(200).json({items:foundCloseby});
+        res.status(200).json({ items: foundCloseby });
 
     }
     catch (err) {
@@ -256,25 +255,30 @@ async function getItemsNearLocation(req, res, next) {
 
 module.exports = {
     createUser: [
-  //      check('phone').isMobilePhone(),
- //       check('password').isLength({ min: 6 }),
- //       check('zip').isPostalCode,
+        check('phone').isNumeric().isLength({ min: 10, max: 10 }),
+        check('password').isLength({ min: 6 }),
+        check('zipcode').isNumeric().isLength({ min: 5, max: 5 }),
         //finally, make user
         function createUser(req, res) {
 
-            if(!req.body.phone || !req.body.password || !req.body.zipcode){
-                res.status(400).json({message: "missing either phone, password, or zipcode "});
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.status(422).json({ errors: errors.array() });
             }
-            
+
+            if (!req.body.phone || !req.body.password || !req.body.zipcode) {
+                res.status(400).json({ message: "missing either phone, password, or zipcode " });
+            }
+
             User.create({
                 phone: req.body.phone,
                 password: req.body.password,
-                zip:req.body.zipcode
+                zip: req.body.zipcode
             }).then((res2) => {
                 res.status(200).json({ message: "Successfully Made User" });
             }).catch((err) => {
                 console.log(err)
-                res.status(400).json({message: "User already exists"});
+                res.status(400).json({ message: "User already exists" });
             })
 
         }
