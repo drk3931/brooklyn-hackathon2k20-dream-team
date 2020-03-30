@@ -66,7 +66,7 @@ async function userAddItem(req, res, next) {
 
     try {
 
-        let user = await User.findOne({ phone: phone });
+        let user = await User.findOne({ phone: req.user.phone });
 
        
         let itemToDonate = req.body.itemToDonate;
@@ -76,6 +76,7 @@ async function userAddItem(req, res, next) {
 
         }
 
+        
         user.itemsToDonate.push({
             itemType:itemToDonate.itemType,
             itemDescription:itemToDonate.itemDescription,
@@ -89,6 +90,7 @@ async function userAddItem(req, res, next) {
         return res.status(200).json(user.itemsToDonate);
     }
     catch (err) {
+        console.log(err)
         return res.status(400).json(JSON.stringify(err))
     }
 
