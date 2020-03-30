@@ -1,15 +1,52 @@
-# brooklyn-hackathon2k20-dream-team
+Dream Team Leaf Backend
 
-# Prerequisites
-* [Twilio](https://github.com/drk3931/brooklyn-hackathon2k20-dream-team#twilio-config)
+Phone needs to be 10 digit number (no dashes) for twilio,
+zipcode needs to be 5 digits and will only apply to NYC for now
 
-## Twilio Config
-Add the following secret keys to your `.env` file
-```javascript
-TWILIO_ACCOUNT_SID=<YOUR_TWILIO_ACCOUNT_SID>
-TWILIO_NOTIFY_SERVICE_SID=<YOUR_TWILIO_NOTIFY_SERVICE_SID>
-TWILIO_AUTH_TOKEN=<YOUR_TWILIO_AUTH_TOKEN>
-TWILIO_NUMBER=<+YOUR_TWILIO_NUMBER>
-MY_PHONE_NUMBER=<YOUR_MY_PHONE_NUMBER>
-```
-`MY_PHONE_NUMBER` is optional and should only be used in development.
+Register User /api/createUser
+    "phone":"6666666666",
+    "password":"supersecretpass",
+    "zipcode":"34202"
+}
+Returns 200 on user creation success
+
+
+Login User /api/loginUser
+{
+    "phone":"6666666666",
+    "password":"supersecretpass",
+}
+Returns auth token on success
+
+
+Add item to donate (upon addition, geolocation calls are made to find users within a 5 mile radius and then text messages are sent to them via twillio that
+helpful resources have just been posted). 
+Note: Requires jwt auth token
+
+This can take either an address or longitude and latitude coordinates. If an address, it will be convered into long lat and used
+for comparison against zip codes of users in the database 
+
+/api/userAddItem
+
+{
+	"address":"63-25 Main St, Flushing, NY 11367",
+	"itemToDonate":{
+		"itemType":"food",
+		"itemDescription":"free sandwiches"
+	}
+	
+}
+
+OR
+
+{
+	"latitude":88,
+	"longitude":-70
+	"itemToDonate":{
+		"itemType":"food",
+		"itemDescription":"free sandwiches"
+	}
+	
+}
+
+Returns all the user's added items on success
