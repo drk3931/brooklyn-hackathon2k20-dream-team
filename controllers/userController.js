@@ -235,7 +235,7 @@ module.exports = {
             User.create({
                 phone: req.body.phone,
                 password: req.body.password,
-                zipcode:req.body.zip
+                zip:req.body.zipcode
             }).then((res2) => {
                 res.status(200).json({ message: "Successfully Made User" });
             }).catch((err) => {

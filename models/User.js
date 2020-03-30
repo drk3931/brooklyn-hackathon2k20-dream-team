@@ -14,9 +14,10 @@ var userSchema = new mongoose.Schema({
         type: String,
         required: [true, 'User phone number required'],
         index: { unique: true },
-        zipcode:{type:String, required:true},
    
     },
+
+    zip:{type:String, required:true},
 
     itemsToDonate:[
         {
