@@ -30,7 +30,7 @@ function loginFunction(req, res, next) {
         return res.status(200).json({ message: 'already logged in' })
     }
 
-    passport.authenticate('local', {session:false},function (err, user, info) {
+    passport.authenticate('local',function (err, user, info) {
         if (err) { return next(err); }
         if (!user) { return res.status(403).json(info) }
 
