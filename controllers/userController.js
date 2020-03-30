@@ -49,6 +49,7 @@ async function userAddItem(req, res, next) {
     let address = req.body.address,latitude,longitude;
 
    
+    let itemToDonate = req.body.itemToDonate;
 
     if(!address){
         latitude = req.body.latitude;
@@ -64,19 +65,23 @@ async function userAddItem(req, res, next) {
         return res.status(400).json({"err":"no location info could be accessed"})
     }
 
+    if(!itemToDonate){
+        return res.status(400).json({"err":"itemToDonate is undefined"})
+
+    }
+
+
+
+
     try {
 
         let user = await User.findOne({ phone: req.user.phone });
 
-       
-        let itemToDonate = req.body.itemToDonate;
-
+    
         if(!user){
             return res.status(400).json({error:"user not found"})
 
         }
-
-        
         user.itemsToDonate.push({
             itemType:itemToDonate.itemType,
             itemDescription:itemToDonate.itemDescription,
@@ -85,9 +90,13 @@ async function userAddItem(req, res, next) {
         });
         await user.save();
 
-        //await getUsersNearCoordinate(phone,pass,1,1);
-      
-        return res.status(200).json(user.itemsToDonate);
+
+        //@edwin, you can send sms messages to the closeByUsers
+        //it is an array of phone numbers within a five mile radius of where the food was posted.
+        let closeByUsers = await getUsersNearCoordinate(req.user.phone,latitude,longitude);
+        
+
+        return res.status(200).json(closeByUsers);
     }
     catch (err) {
         console.log(err)
@@ -96,34 +105,52 @@ async function userAddItem(req, res, next) {
 
 }
 
-async function getUsersNearCoordinate(phone,pass,lat,lon){
+async function getUsersNearCoordinate(phone,lat,long){
 
     let users = await User.find({});
 
+    let closeUsers = [];
 
-    return users.filter(
-        async u=>{
+    users.forEach(async u=>{
+
+        if(!u.phone === phone){
+
             let zip = u.zip;
-
-            let zipCoords = await geocoder.geocode("11419");
-
-            console.log(zipCoords);
-
-            if(zipCoords){
-                
-                console.log(zipCoords);
-                return true;
+            let targLat = undefined, targLong = undefined;
 
 
+            let zipCoord = await geocoder.geocode(zip);
+            for(zipCoord in zipCoords[0]){
+                if(zipCoords.state==="New York"){
+                    targLat = zipCoord.latitude;
+                    targLong = zipCoord.longitude; 
+                }
             }
-            else{
-                return false;
+
+            if(targLat && targLong){
+
+                let distanceMeters = geolib.getDistance(
+                    { latitude: targLat, longitude: targLong },
+                    { latitude: lat, longitude: long }
+                );
+
+
+                const numMiles = 5;
+                const asMeters = 1609.34 * numMiles;
+
+
+                if (distanceMeters <= asMeters) {
+                    closeUsers.push(u.phone)
+                }
+                
             }
         }
-    );
+    });
+            
+        
 
+    return closeUsers;
 
-    
 }
 
 
