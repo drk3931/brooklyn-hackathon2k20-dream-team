@@ -115,7 +115,7 @@ async function userAddItem(req, res, next) {
         
         if(closeByUsers.length === 0)
         {
-            return res.status(200).json(closeByUsers);
+            return res.status(200).json(user.itemsToDonate);
         }
         
         // TODO: Needs to be tested. May fail because closeByUsers is async. If fails, add await to bindings.
@@ -137,7 +137,7 @@ async function userAddItem(req, res, next) {
             console.error(err);
           });
 
-        return res.status(200).json(closeByUsers);
+        return res.status(200).json(user.itemsToDonate);
     }
     catch (err) {
         console.log(err)
