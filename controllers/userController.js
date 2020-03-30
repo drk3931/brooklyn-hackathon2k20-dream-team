@@ -17,24 +17,6 @@ const authToken = process.env.TWILIO_AUTH_TOKEN;
 const client = require('twilio')(accountSID, authToken);
 const service = client.notify.services(process.env.TWILIO_NOTIFY_SERVICE_SID);
 
-const numbers = [/* ... */]; // TODO: Populate numbers from function
-const bindings = numbers.map(number => {
-  return JSON.stringify({ binding_type: 'sms', address: number });
-});
-
-service.notifications
-  .create({
-    toBinding: bindings,
-    body: 'Hey there! There\'s food available for pickup nearby!'
-  })
-  .then(notification => {
-    console.log(notification);
-  })
-  .catch(err => {
-    console.error(err);
-  });
-// End of Twilio
-
 function checkToken(req, res, next) {
 
     let decoded = jwt.decode(req.headers.authorization);
@@ -114,11 +96,23 @@ async function userAddItem(req, res, next) {
         });
         await user.save();
 
-
-        //@edwin, you can send sms messages to the closeByUsers
-        //it is an array of phone numbers within a five mile radius of where the food was posted.
         let closeByUsers = await getUsersNearCoordinate(req.user.phone,latitude,longitude);
+        // TODO: Needs to be tested. May fail because closeByUsers is async. If fails, add await to bindings.
+        const bindings = closeByUsers.map(number => {
+          return JSON.stringify({ binding_type: 'sms', address: number });
+        });
 
+        service.notifications
+          .create({
+            toBinding: bindings,
+            body: 'Hey there! There\'s food available for pickup nearby!'
+          })
+          .then(notification => {
+            console.log(notification);
+          })
+          .catch(err => {
+            console.error(err);
+          });
 
         return res.status(200).json(closeByUsers);
     }
