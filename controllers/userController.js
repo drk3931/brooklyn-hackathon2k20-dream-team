@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 const geocoder = require('../GeoCoder');
 const geolib = require('geolib');
 
+
 function checkToken(req, res, next) {
  
     let decoded = jwt.decode(req.headers.authorization);
@@ -25,8 +26,8 @@ function checkToken(req, res, next) {
 
 function loginFunction(req, res, next) {
 
-
-    if (jwt.decode(req.headers.authorization)) {
+    let toDecode = jwt.decode(req.headers.authorization);
+    if (toDecode) {
         return res.status(200).json({ message: 'already logged in' })
     }
 
@@ -34,19 +35,20 @@ function loginFunction(req, res, next) {
         if (err) { return next(err); }
         if (!user) { return res.status(403).json(info) }
 
-        const token = jwt.sign(user.toJSON(), process.env.JWT_SECRET,{expiresIn: '365d'});
-        return res.json({ userPhone: user.phone, token });
+        const token = jwt.sign(user.toJSON(), "asdiuhasiduhasiduhasuidh",{expiresIn: '365d'});
+        return res.json({ token });
 
 
     })(req, res, next);
 
 }
 
+
 async function userAddItem(req, res, next) {
 
-    let address = req.body.address;
-    let latitude = undefined;
-    let longitude = undefined;
+    let address = req.body.address,latitude,longitude;
+
+   
 
     if(!address){
         latitude = req.body.latitude;
@@ -64,7 +66,14 @@ async function userAddItem(req, res, next) {
 
     try {
 
-        let user = await User.findOne({ phone: req.user.phone });
+        let user = await User.findOne({ phone: phone });
+
+        let isMatch = await user.comparePassword(pass);
+        if(!isMatch){
+            return res.status(400).json({"err":"invalid user"})
+        }
+
+
         let itemToDonate = req.body.itemToDonate;
 
         if(!user){
@@ -80,27 +89,29 @@ async function userAddItem(req, res, next) {
         });
         await user.save();
 
-        await getUsersNearCoordinate(1,1);
+        //await getUsersNearCoordinate(phone,pass,1,1);
       
         return res.status(200).json(user.itemsToDonate);
     }
     catch (err) {
-
+        console.log(err)
         return res.status(400).json(err)
     }
 
 }
 
-async function getUsersNearCoordinate(lat,lon){
+async function getUsersNearCoordinate(phone,pass,lat,lon){
 
     let users = await User.find({});
-    
+
 
     return users.filter(
         async u=>{
             let zip = u.zip;
 
-            let zipCoords = await geocoder.geocode(zip);
+            let zipCoords = await geocoder.geocode("11419");
+
+            console.log(zipCoords);
 
             if(zipCoords){
                 
@@ -199,10 +210,10 @@ module.exports = {
         userAddItem
     ],
     getItemsNearLocation: [
+        checkToken,
         check('longitude').isNumeric(),
         check('latitude').isNumeric(),
-        checkToken,
-        getItemsNearLocation
+        getItemsNearLocation,
     ]
 
 }
