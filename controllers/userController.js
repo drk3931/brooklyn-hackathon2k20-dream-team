@@ -51,6 +51,7 @@ function loginFunction(req, res, next) {
 }
 
 
+
 async function userAddItem(req, res, next) {
 
     let address = req.body.address,latitude,longitude;
@@ -61,6 +62,15 @@ async function userAddItem(req, res, next) {
     if(!address){
         latitude = req.body.latitude;
         longitude = req.body.longitude;
+        let components = await geocoder.geocode(`${latitude},${longitude}`);
+        components = components[0];
+
+        if(components){
+            address = `${components.streetNumber} ${components.streetName} , ${components.city} , ${components.zipcode}`;
+        }
+        else{
+            return res.status(400).json({"err":"no location info could be accessed"})
+        }
     }else{
         let res = await geocoder.geocode(address);
         latitude = res[0].latitude;
@@ -88,24 +98,37 @@ async function userAddItem(req, res, next) {
             return res.status(400).json({error:"user not found"})
 
         }
-        user.itemsToDonate.push({
+
+
+        let newItem = {
             itemType:itemToDonate.itemType,
             itemDescription:itemToDonate.itemDescription,
             latitude: latitude,
             longitude:longitude
-        });
+        }
+
+
+        user.itemsToDonate.push(newItem);
         await user.save();
 
         let closeByUsers = await getUsersNearCoordinate(req.user.phone,latitude,longitude);
+        
+        if(closeByUsers.length === 0)
+        {
+            return res.status(200).json(closeByUsers);
+        }
+        
         // TODO: Needs to be tested. May fail because closeByUsers is async. If fails, add await to bindings.
         const bindings = closeByUsers.map(number => {
           return JSON.stringify({ binding_type: 'sms', address: number });
         });
 
+        let bodyString =  `Hey there! There\'s something available for pickup nearby. \n category: ${newItem.itemType} \n description: ${newItem.itemDescription} \n ${address}`;
+
         service.notifications
           .create({
             toBinding: bindings,
-            body: 'Hey there! There\'s food available for pickup nearby!'
+            body:bodyString
           })
           .then(notification => {
             console.log(notification);
@@ -114,7 +137,7 @@ async function userAddItem(req, res, next) {
             console.error(err);
           });
 
-        return res.status(200).json(user.itemsToDonate);
+        return res.status(200).json(closeByUsers);
     }
     catch (err) {
         console.log(err)
@@ -126,29 +149,32 @@ async function userAddItem(req, res, next) {
 async function getUsersNearCoordinate(phone,lat,long){
 
     let users = await User.find({});
-
     let closeUsers = [];
 
-    users.forEach(async u=>{
+    for(let u of users){
 
-        if(!u.phone === phone){
+        if(!(u.phone === phone)){
 
             let zip = u.zip;
             let targLat = undefined, targLong = undefined;
 
 
             let zipCoord = await geocoder.geocode(zip);
-            for(zipCoord in zipCoords[0]){
-                if(zipCoords.state==="New York"){
-                    targLat = zipCoord.latitude;
-                    targLong = zipCoord.longitude;
+
+            
+            for(let zOuter of zipCoord){
+                if(zOuter.state==="New York"){
+                    targLat = zOuter.latitude;
+                    targLong = zOuter.longitude;
+                    break;
                 }
+
             }
+
 
             if(targLat && targLong){
 
-                console.log(targLat)
-                console.log(targLong)
+
 
 
                 let distanceMeters = geolib.getDistance(
@@ -160,18 +186,21 @@ async function getUsersNearCoordinate(phone,lat,long){
                 const numMiles = 5;
                 const asMeters = 1609.34 * numMiles;
 
-                console.log(distanceMeters)
                 if (distanceMeters <= asMeters) {
                     closeUsers.push(u.phone)
                 }
 
             }
+        }else{
+        
+
         }
-    });
 
-
+    }
 
     return closeUsers;
+
+ 
 
 }
 
