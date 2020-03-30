@@ -1,4 +1,5 @@
 Dream Team Leaf Backend
+Live server @ https://brooklyn-hackathon.herokuapp.com
 
 Phone needs to be 10 digit number (no dashes) for twilio,
 zipcode needs to be 5 digits and will only apply to NYC for now
