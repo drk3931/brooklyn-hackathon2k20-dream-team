@@ -232,10 +232,11 @@ module.exports = {
  //       check('zip').isPostalCode,
         //finally, make user
         function createUser(req, res) {
-            const errors = validationResult(req);
-            if (!errors.isEmpty()) {
-                return res.status(400).json({ errors: errors.array() });
+
+            if(!req.body.phone || !req.body.password || !req.body.zipcode){
+                res.status(400).json({message: "missing either phone, password, or zipcode "});
             }
+            
             User.create({
                 phone: req.body.phone,
                 password: req.body.password,
@@ -243,6 +244,7 @@ module.exports = {
             }).then((res2) => {
                 res.status(200).json({ message: "Successfully Made User" });
             }).catch((err) => {
+                console.log(err)
                 res.status(400).json({message: "User already exists"});
             })
 
