@@ -7,6 +7,31 @@ var passport = require('passport');
 const jwt = require('jsonwebtoken');
 const geocoder = require('../GeoCoder');
 
+// Twilio setup
+const accountSID = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+const client = require('twilio')(accountSID, authToken);
+const service = client.notify.services(process.env.TWILIO_NOTIFY_SERVICE_SID);
+
+const numbers = [/* ... */]; // TODO: Populate numbers from function
+const bindings = numbers.map(number => {
+  return JSON.stringify({ binding_type: 'sms', address: number });
+});
+
+service.notifications
+  .create({
+    toBinding: bindings,
+    body: 'Hey there! There\'s food available for pickup nearby!'
+  })
+  .then(notification => {
+    console.log(notification);
+  })
+  .catch(err => {
+    console.error(err);
+  });
+// End of Twilio
+
 function checkToken(req, res, next) {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -60,7 +85,7 @@ async function userAddItem(req, res, next) {
         return res.status(400).json({"err":"no location info could be accessed"})
     }
 
-    
+
     try {
 
         let user = await User.findOne({ phone: req.user.phone });
@@ -160,5 +185,3 @@ module.exports = {
     ]
 
 }
-
-
