@@ -68,12 +68,7 @@ async function userAddItem(req, res, next) {
 
         let user = await User.findOne({ phone: phone });
 
-        let isMatch = await user.comparePassword(pass);
-        if(!isMatch){
-            return res.status(400).json({"err":"invalid user"})
-        }
-
-
+       
         let itemToDonate = req.body.itemToDonate;
 
         if(!user){
@@ -94,8 +89,7 @@ async function userAddItem(req, res, next) {
         return res.status(200).json(user.itemsToDonate);
     }
     catch (err) {
-        console.log(err)
-        return res.status(400).json(err)
+        return res.status(400).json(JSON.stringify(err))
     }
 
 }
@@ -172,6 +166,7 @@ async function getItemsNearLocation(req, res, next) {
     }
     catch (err) {
 
+        console.log(err);
         return res.status(400).json(err)
     }
 
