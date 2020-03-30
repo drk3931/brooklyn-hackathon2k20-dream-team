@@ -20,6 +20,7 @@
     "opencage-api-client": "^0.7.1",
     "passport": "^0.4.1",
     "passport-jwt": "^4.0.0",
-    "passport-local": "^1.0.0"
+    "passport-local": "^1.0.0",
+    "twilio": "^3.41.1"
   }
 }
