@@ -147,6 +147,10 @@ async function getUsersNearCoordinate(phone,lat,long){
 
             if(targLat && targLong){
 
+                console.log(targLat)
+                console.log(targLong)
+
+
                 let distanceMeters = geolib.getDistance(
                     { latitude: targLat, longitude: targLong },
                     { latitude: lat, longitude: long }
