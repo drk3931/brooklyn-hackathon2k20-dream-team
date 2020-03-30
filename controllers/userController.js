@@ -10,8 +10,15 @@ const geocoder = require('../GeoCoder');
 const geolib = require('geolib');
 
 
+// Twilio setup
+const accountSID = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+const client = require('twilio')(accountSID, authToken);
+const service = client.notify.services(process.env.TWILIO_NOTIFY_SERVICE_SID);
+
 function checkToken(req, res, next) {
- 
+
     let decoded = jwt.decode(req.headers.authorization);
     if (decoded) {
         req.user = decoded;
@@ -48,7 +55,7 @@ async function userAddItem(req, res, next) {
 
     let address = req.body.address,latitude,longitude;
 
-   
+
     let itemToDonate = req.body.itemToDonate;
 
     if(!address){
@@ -58,7 +65,7 @@ async function userAddItem(req, res, next) {
         let res = await geocoder.geocode(address);
         latitude = res[0].latitude;
         longitude = res[0].longitude;
-    
+
     }
 
     if(!latitude || !longitude){
@@ -72,12 +79,11 @@ async function userAddItem(req, res, next) {
 
 
 
-
     try {
 
         let user = await User.findOne({ phone: req.user.phone });
 
-    
+
         if(!user){
             return res.status(400).json({error:"user not found"})
 
@@ -90,11 +96,23 @@ async function userAddItem(req, res, next) {
         });
         await user.save();
 
-
-        //@edwin, you can send sms messages to the closeByUsers
-        //it is an array of phone numbers within a five mile radius of where the food was posted.
         let closeByUsers = await getUsersNearCoordinate(req.user.phone,latitude,longitude);
-        
+        // TODO: Needs to be tested. May fail because closeByUsers is async. If fails, add await to bindings.
+        const bindings = closeByUsers.map(number => {
+          return JSON.stringify({ binding_type: 'sms', address: number });
+        });
+
+        service.notifications
+          .create({
+            toBinding: bindings,
+            body: 'Hey there! There\'s food available for pickup nearby!'
+          })
+          .then(notification => {
+            console.log(notification);
+          })
+          .catch(err => {
+            console.error(err);
+          });
 
         return res.status(200).json(closeByUsers);
     }
@@ -123,7 +141,7 @@ async function getUsersNearCoordinate(phone,lat,long){
             for(zipCoord in zipCoords[0]){
                 if(zipCoords.state==="New York"){
                     targLat = zipCoord.latitude;
-                    targLong = zipCoord.longitude; 
+                    targLong = zipCoord.longitude;
                 }
             }
 
@@ -142,12 +160,12 @@ async function getUsersNearCoordinate(phone,lat,long){
                 if (distanceMeters <= asMeters) {
                     closeUsers.push(u.phone)
                 }
-                
+
             }
         }
     });
-            
-        
+
+
 
     return closeUsers;
 
@@ -241,5 +259,3 @@ module.exports = {
     ]
 
 }
-
-
